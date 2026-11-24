@@ -5,504 +5,226 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Bouncy Arena</title>
-
 <style>
 *{box-sizing:border-box}
-body{
-  margin:0;
-  background:#101522;
-  color:white;
-  font-family:Arial,sans-serif;
-}
-header{
-  padding:20px 7%;
-  border-bottom:1px solid #293449;
-}
-.logo{font-size:23px;font-weight:900}
-.logo span,h1 span{color:#55e5a0}
-main{max-width:1050px;margin:45px auto;padding:20px}
-.hero{text-align:center;margin-bottom:30px}
-.tag{
-  color:#65e5a8;
-  background:#193d35;
-  padding:8px 13px;
-  border-radius:20px;
-}
-h1{font-size:clamp(38px,7vw,65px)}
-.subtitle,.status{color:#aebbd0}
-.layout{
-  display:grid;
-  grid-template-columns:1.4fr 1fr;
-  gap:20px;
-}
-.panel{
-  background:#1b2638;
-  border:1px solid #2b3a50;
-  border-radius:17px;
-  padding:22px;
-}
-canvas{
-  width:100%;
-  background:#b9e8ff;
-  border-radius:12px;
-  display:block;
-}
-button,input{
-  width:100%;
-  padding:13px;
-  margin:7px 0;
-  border:0;
-  border-radius:9px;
-  font-size:15px;
-}
-button{
-  background:#55e5a0;
-  color:#102018;
-  font-weight:bold;
-  cursor:pointer;
-}
-.secondary{background:#34445d;color:white}
-input{
-  background:#101522;
-  color:white;
-  border:1px solid #40516a;
-}
-#roomCode{
-  font-size:25px;
-  color:#55e5a0;
-  letter-spacing:3px;
-}
-@media(max-width:750px){
-  .layout{grid-template-columns:1fr}
-}
+body{margin:0;background:#101522;color:white;font-family:Arial,sans-serif;text-align:center}
+header{padding:20px;border-bottom:1px solid #293449;font-size:25px;font-weight:900}
+header span{color:#55e5a0}
+main{max-width:850px;margin:35px auto;padding:15px}
+.panel{background:#192337;padding:22px;border-radius:15px;margin-bottom:20px}
+input,button{padding:12px;border:0;border-radius:8px;font-size:16px;margin:5px}
+input{width:170px}
+button{background:#55e5a0;color:#102019;font-weight:bold;cursor:pointer}
+button:hover{filter:brightness(1.1)}
+#arena{height:350px;background:#202e45;border:3px solid #40516c;border-radius:14px;position:relative;overflow:hidden}
+.player{width:48px;height:48px;border-radius:50%;position:absolute;transition:left .06s,top .06s}
+#p1{background:#55e5a0}
+#p2{background:#ffbd59}
+#message{font-size:30px;font-weight:900;color:#55e5a0;margin:15px}
+#status{color:#aebbd0}
+#controls{color:#bdc9dc;line-height:1.8}
 </style>
 </head>
-
 <body>
-<header>
-  <div class="logo">BOUNCY<span>ARENA</span></div>
-</header>
-
+<header>BOUNCY <span>ARENA</span></header>
 <main>
-<section class="hero">
-  <span class="tag">WELCOME TO THE ARENA</span>
-  <h1>ENTER THE <span>ARENA.</span></h1>
-  <p class="subtitle">Jump in, master the physics, and compete with friends.</p>
-</section>
+<div class="panel">
+<h2>Multiplayer Arena</h2>
+<input id="room" placeholder="Room code" maxlength="6">
+<br>
+<button id="create">Create Room</button>
+<button id="join">Join Room</button>
+<p id="status">Connect to play with a friend.</p>
+</div>
 
-<div class="layout">
-<section class="panel">
-  <h2>🏟️ Arena</h2>
-  <canvas id="game" width="700" height="400"></canvas>
-  <p class="status">A/D or arrows to move. W, Space, or Up to jump.</p>
-  <button id="play">PLAY / RESUME</button>
-  <button class="secondary" id="exit">EXIT ROOM</button>
-</section>
-
-<section class="panel">
-  <h2>Multiplayer</h2>
-  <p class="status" id="status">Connecting to Firebase...</p>
-  <button id="create">＋ CREATE ROOM</button>
-  <p class="status">Your room code:</p>
-  <div id="roomCode">------</div>
-  <p class="status">Share this code with friends.</p>
-  <input id="joinCode" maxlength="6" placeholder="ENTER ROOM CODE">
-  <button class="secondary" id="join">JOIN ROOM</button>
-  <p class="status" id="players">Players: 0</p>
-</section>
+<div id="arena">
+<div class="player" id="p1"></div>
+<div class="player" id="p2"></div>
+</div>
+<div id="message">READY?</div>
+<div id="controls">
+WASD or Arrow Keys = Move<br>
+SPACE = BONK!
 </div>
 </main>
 
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
 <script>
 const firebaseConfig = {
-  apiKey: "AIzaSyA7mmK1Ljk2As5dPCfNAvt9CvF17G6maOE",
-  authDomain: "bouncyballarena-70cf9.firebaseapp.com",
-  databaseURL: "https://bouncyballarena-70cf9-default-rtdb.firebaseio.com",
-  projectId: "bouncyballarena-70cf9",
-  storageBucket: "bouncyballarena-70cf9.firebasestorage.app",
-  messagingSenderId: "1007913424936",
-  appId: "1:1007913424936:web:8ed5bde9eb78692834bd1d",
-  measurementId: "G-9Y8FXKXEK6"
+ apiKey:"AIzaSyA7mmK1Ljk2As5dPCfNAvt9CvF17G6maOE",
+ authDomain:"bouncyballarena-70cf9.firebaseapp.com",
+ databaseURL:"https://bouncyballarena-70cf9-default-rtdb.firebaseio.com",
+ projectId:"bouncyballarena-70cf9",
+ storageBucket:"bouncyballarena-70cf9.firebasestorage.app",
+ messagingSenderId:"1007913424936",
+ appId:"1:1007913424936:web:8ed5bde9eb78692834bd1d",
+ measurementId:"G-9Y8FXKXEK6"
 };
 
 firebase.initializeApp(firebaseConfig);
+const auth=firebase.auth();
+const db=firebase.database();
 
-const db = firebase.database();
-const auth = firebase.auth();
+let uid=null;
+let roomCode=null;
+let roomRef=null;
+let myPlayer=null;
+let players={};
+let x=50,y=140;
+let keys={};
+let lastBonk=0;
+let eventListener=null;
 
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+const status=document.getElementById("status");
+const message=document.getElementById("message");
 
-const statusEl = document.getElementById("status");
-const codeEl = document.getElementById("roomCode");
-const playersEl = document.getElementById("players");
+const arena=document.getElementById("arena");
 
-let uid = null;
-let room = null;
-let playerRef = null;
-let players = {};
-let running = false;
-let keys = {};
-let lastSent = 0;
-let grounded = false;
-let jumpHeld = false;
-let lastHits = {};
+function setStatus(t){status.textContent=t}
 
-const radius = 18;
-
-const me = {
-  x:100,
-  y:332,
-  vx:0,
-  vy:0
-};
-
-const platforms = [
-  {x:170,y:270,w:140,h:12},
-  {x:420,y:220,w:140,h:12}
-];
-
-auth.signInAnonymously()
-.then(result=>{
-  uid = result.user.uid;
-  statusEl.textContent = "Connected! Create a room or join one.";
-})
-.catch(error=>{
-  statusEl.textContent = "Sign-in error: " + error.message;
+auth.signInAnonymously().then(result=>{
+ uid=result.user.uid;
+ setStatus("Connected! Create or join a room.");
+}).catch(error=>{
+ setStatus("Firebase error: "+error.message);
 });
-
-function newCode(){
-  return Math.random().toString(36).substring(2,8).toUpperCase();
-}
-
-async function createRoom(){
-  if(!uid){
-    statusEl.textContent = "Still connecting...";
-    return;
-  }
-
-  const code = newCode();
-  const ref = db.ref("rooms/" + code);
-
-  try{
-    await ref.set({
-      host:uid,
-      createdAt:firebase.database.ServerValue.TIMESTAMP,
-      players:{
-        [uid]:{
-          x:100,
-          y:332,
-          name:"Player",
-          updatedAt:Date.now()
-        }
-      }
-    });
-
-    await enterRoom(code);
-  }catch(error){
-    statusEl.textContent = "Create failed: " + error.message;
-  }
-}
-
-async function joinRoom(){
-  if(!uid){
-    statusEl.textContent = "Still connecting...";
-    return;
-  }
-
-  const code = document.getElementById("joinCode")
-    .value.trim().toUpperCase();
-
-  if(!/^[A-Z0-9]{6}$/.test(code)){
-    statusEl.textContent = "Enter a 6-character room code.";
-    return;
-  }
-
-  try{
-    const ref = db.ref("rooms/" + code);
-    const snap = await ref.child("players").once("value");
-
-    if(!snap.exists()){
-      statusEl.textContent = "Room not found.";
-      return;
-    }
-
-    if(snap.numChildren() >= 4){
-      statusEl.textContent = "Room is full.";
-      return;
-    }
-
-    await ref.child("players/" + uid).set({
-      x:150,
-      y:332,
-      name:"Player",
-      updatedAt:Date.now()
-    });
-
-    await enterRoom(code);
-  }catch(error){
-    statusEl.textContent = "Join failed: " + error.message;
-  }
-}
-
-async function enterRoom(code){
-  if(room) await leaveRoom();
-
-  room = code;
-  players = {};
-  lastHits = {};
-
-  me.x = uid ? 100 + Math.random()*100 : 100;
-  me.y = 332;
-  me.vx = 0;
-  me.vy = 0;
-
-  const ref = db.ref("rooms/" + code);
-  playerRef = ref.child("players/" + uid);
-
-  await playerRef.onDisconnect().remove();
-
-  codeEl.textContent = code;
-  statusEl.textContent = "Joined room " + code + "!";
-  running = true;
-
-  ref.child("players").on("value",snap=>{
-    players = snap.val() || {};
-    playersEl.textContent =
-      "Players: " + Object.keys(players).length;
-  });
-}
-
-async function leaveRoom(){
-  if(!room) return;
-
-  const oldRoom = room;
-  const oldPlayerRef = playerRef;
-
-  room = null;
-  playerRef = null;
-  players = {};
-  running = false;
-
-  if(oldPlayerRef){
-    await oldPlayerRef.onDisconnect().cancel();
-    await oldPlayerRef.remove();
-  }
-
-  db.ref("rooms/" + oldRoom + "/players").off();
-
-  codeEl.textContent = "------";
-  playersEl.textContent = "Players: 0";
-  statusEl.textContent = "You left the room.";
-}
-
-document.getElementById("create").onclick = createRoom;
-document.getElementById("join").onclick = joinRoom;
-document.getElementById("exit").onclick = leaveRoom;
-document.getElementById("play").onclick = ()=>running = true;
-
-window.addEventListener("keydown",e=>{
-  keys[e.key.toLowerCase()] = true;
-
-  if([" ","ArrowUp","ArrowLeft","ArrowRight","ArrowDown"].includes(e.key)){
-    e.preventDefault();
-  }
-});
-
-window.addEventListener("keyup",e=>{
-  keys[e.key.toLowerCase()] = false;
-});
-
-function collideWithPlayers(){
-  for(const [id,p] of Object.entries(players)){
-    if(id === uid || !p) continue;
-    if(typeof p.x !== "number" || typeof p.y !== "number") continue;
-
-    // Ignore players whose connection has gone stale.
-    if(Date.now() - (p.updatedAt || 0) > 6000) continue;
-
-    let dx = me.x - p.x;
-    let dy = me.y - p.y;
-    let distance = Math.sqrt(dx*dx + dy*dy);
-
-    if(distance >= radius*2) continue;
-
-    if(distance < 0.001){
-      dx = uid > id ? 1 : -1;
-      dy = 0;
-      distance = 1;
-    }
-
-    const nx = dx / distance;
-    const ny = dy / distance;
-    const overlap = radius*2 - distance;
-
-    // Separate the two circles.
-    me.x += nx * overlap * 0.55;
-    me.y += ny * overlap * 0.55;
-
-    // Apply a knockback impulse with a short cooldown.
-    if(Date.now() - (lastHits[id] || 0) > 400){
-      lastHits[id] = Date.now();
-
-      const impact = Math.max(
-        5,
-        Math.min(13,Math.abs(me.vx*nx + me.vy*ny) + 4)
-      );
-
-      me.vx += nx * impact * 1.1;
-      me.vy += ny * impact * 1.1 - 1.5;
-    }
-  }
-}
-
-function update(){
-  if(running){
-    // Horizontal movement.
-    if(keys.a || keys.arrowleft){
-      me.vx -= 0.65;
-    }
-
-    if(keys.d || keys.arrowright){
-      me.vx += 0.65;
-    }
-
-    me.vx = Math.max(-7.5,Math.min(7.5,me.vx));
-
-    const jumpPressed =
-      keys.w || keys[" "] || keys.arrowup;
-
-    if(jumpPressed && grounded && !jumpHeld){
-      me.vy = -11;
-      grounded = false;
-    }
-
-    jumpHeld = jumpPressed;
-
-    // Gravity.
-    me.vy += 0.48;
-
-    const oldY = me.y;
-
-    me.x += me.vx;
-    me.y += me.vy;
-
-    // Arena walls.
-    if(me.x < radius){
-      me.x = radius;
-      me.vx = Math.abs(me.vx)*0.65;
-    }
-
-    if(me.x > 700-radius){
-      me.x = 700-radius;
-      me.vx = -Math.abs(me.vx)*0.65;
-    }
-
-    // Platform landing.
-    grounded = false;
-
-    for(const p of platforms){
-      const overlapsX =
-        me.x + radius > p.x &&
-        me.x - radius < p.x + p.w;
-
-      const crossedTop =
-        oldY + radius <= p.y &&
-        me.y + radius >= p.y;
-
-      if(me.vy >= 0 && overlapsX && crossedTop){
-        me.y = p.y - radius;
-        me.vy = 0;
-        grounded = true;
-      }
-    }
-
-    // Main floor.
-    if(me.y + radius >= 350){
-      me.y = 350-radius;
-      me.vy = 0;
-      grounded = true;
-    }
-
-    // Ceiling.
-    if(me.y < radius){
-      me.y = radius;
-      me.vy = Math.abs(me.vy)*0.5;
-    }
-
-    // Player-to-player collisions.
-    collideWithPlayers();
-
-    // Friction.
-    me.vx *= grounded ? 0.82 : 0.985;
-
-    // Send our position to Firebase.
-    if(room && playerRef && Date.now()-lastSent > 100){
-      lastSent = Date.now();
-
-      playerRef.update({
-        x:me.x,
-        y:me.y,
-        updatedAt:Date.now()
-      }).catch(error=>{
-        statusEl.textContent = "Update failed: " + error.message;
-      });
-    }
-  }
-
-  draw();
-  requestAnimationFrame(update);
-}
-
-function drawBall(x,y,color,label){
-  ctx.beginPath();
-  ctx.arc(x,y,radius,0,Math.PI*2);
-  ctx.fillStyle = color;
-  ctx.fill();
-
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = "rgba(0,0,0,0.18)";
-  ctx.stroke();
-
-  ctx.fillStyle = "#172033";
-  ctx.font = "12px Arial";
-  ctx.textAlign = "center";
-  ctx.fillText(label,x,y-27);
-}
 
 function draw(){
-  ctx.clearRect(0,0,700,400);
+ const width=arena.clientWidth;
+ const height=arena.clientHeight;
 
-  // Floor.
-  ctx.fillStyle = "#53647d";
-  ctx.fillRect(0,350,700,50);
-
-  // Platforms.
-  for(const p of platforms){
-    ctx.fillStyle = "#55e5a0";
-    ctx.fillRect(p.x,p.y,p.w,p.h);
-  }
-
-  // Other players.
-  for(const [id,p] of Object.entries(players)){
-    if(id === uid || !p) continue;
-
-    if(typeof p.x !== "number" || typeof p.y !== "number") continue;
-
-    if(Date.now() - (p.updatedAt || 0) > 6000) continue;
-
-    drawBall(p.x,p.y,"#3478db","Friend");
-  }
-
-  // Our locally controlled player.
-  drawBall(me.x,me.y,"#ff595e","You");
+ for(const id of Object.keys(players)){
+  const p=players[id];
+  const el=document.getElementById(id===uid?"p1":"p2");
+  if(!el)continue;
+  el.style.left=(p.x/100*(width-48))+"px";
+  el.style.top=(p.y/100*(height-48))+"px";
+ }
 }
 
-update();
+async function enterRoom(code,create){
+ if(!uid){setStatus("Connecting to Firebase...");return}
+
+ code=code.toUpperCase().replace(/[^A-Z0-9]/g,"");
+ if(code.length<4){setStatus("Enter a valid room code.");return}
+
+ const ref=db.ref("rooms/"+code);
+ const snapshot=await ref.once("value");
+
+ if(create){
+  if(snapshot.exists()){
+   setStatus("Room already exists. Try another code.");
+   return;
+  }
+  await ref.set({created:Date.now()});
+ }else if(!snapshot.exists()){
+  setStatus("Room not found. Check the code.");
+  return;
+ }
+
+ roomCode=code;
+ roomRef=ref;
+ const existing=await ref.child("players").once("value");
+ const data=existing.val()||{};
+ const count=Object.keys(data).length;
+
+ if(count>=2&&!data[uid]){
+  roomCode=null;
+  roomRef=null;
+  setStatus("Room is full!");
+  return;
+ }
+
+ myPlayer=uid;
+ x=count===0?20:80;
+ y=50;
+
+ await ref.child("players/"+uid).set({
+  x,y,updated:Date.now()
+ });
+
+ ref.child("players/"+uid).onDisconnect().remove();
+
+ ref.child("players").on("value",snap=>{
+  players=snap.val()||{};
+  draw();
+ });
+
+ const events=ref.child("bonks");
+ eventListener=snap=>{
+  const event=snap.val();
+  if(!event||event.from===uid)return;
+  message.textContent="BONK!!";
+  message.style.color="#ffbd59";
+  setTimeout(()=>message.textContent="FIGHT!",800);
+ };
+ events.limitToLast(1).on("child_added",eventListener);
+
+ document.getElementById("room").value=code;
+ setStatus("Connected to room "+code+"! Share this code with your friend.");
+ message.textContent="FIGHT!";
+}
+
+document.getElementById("create").onclick=()=>{
+ const code=Math.random().toString(36).substring(2,8).toUpperCase();
+ document.getElementById("room").value=code;
+ enterRoom(code,true);
+};
+
+document.getElementById("join").onclick=()=>{
+ enterRoom(document.getElementById("room").value,false);
+};
+
+document.addEventListener("keydown",e=>{
+ keys[e.key.toLowerCase()]=true;
+ if([" ","arrowup","arrowdown","arrowleft","arrowright"].includes(e.key.toLowerCase()))e.preventDefault();
+ if(e.code==="Space")bonk();
+});
+
+document.addEventListener("keyup",e=>{
+ keys[e.key.toLowerCase()]=false;
+});
+
+function bonk(){
+ if(!roomRef||Date.now()-lastBonk<800)return;
+ lastBonk=Date.now();
+
+ roomRef.child("bonks").push({
+  from:uid,
+  time:firebase.database.ServerValue.TIMESTAMP
+ });
+
+ message.textContent="BONK!!";
+ message.style.color="#55e5a0";
+ setTimeout(()=>message.textContent="FIGHT!",800);
+}
+
+function move(){
+ if(!roomRef)return;
+
+ let dx=0,dy=0;
+ if(keys["a"]||keys["arrowleft"])dx--;
+ if(keys["d"]||keys["arrowright"])dx++;
+ if(keys["w"]||keys["arrowup"])dy--;
+ if(keys["s"]||keys["arrowdown"])dy++;
+
+ if(dx||dy){
+  x=Math.max(0,Math.min(100,x+dx*0.8));
+  y=Math.max(0,Math.min(100,y+dy*0.8));
+
+  roomRef.child("players/"+uid).update({
+   x,y,updated:Date.now()
+  });
+  players[uid]={x,y};
+  draw();
+ }
+}
+
+setInterval(move,30);
+window.addEventListener("resize",draw);
 </script>
 </body>
 </html>
