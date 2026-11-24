@@ -145,9 +145,12 @@ async function enterRoom(code,create){
  x=count===0?20:80;
  y=50;
 
- await ref.child("players/"+uid).set({
-  x,y,updated:Date.now()
- });
+await ref.child("players/"+uid).set({
+  x: x,
+  y: y,
+  name: "Player " + (count + 1),
+  updatedAt: Date.now()
+});
 
  ref.child("players/"+uid).onDisconnect().remove();
 
@@ -218,9 +221,11 @@ function move(){
   x=Math.max(0,Math.min(100,x+dx*0.8));
   y=Math.max(0,Math.min(100,y+dy*0.8));
 
-  roomRef.child("players/"+uid).update({
-   x,y,updated:Date.now()
-  });
+ roomRef.child("players/"+uid).update({
+  x: x,
+  y: y,
+  updatedAt: Date.now()
+});
   players[uid]={x,y};
   draw();
  }
