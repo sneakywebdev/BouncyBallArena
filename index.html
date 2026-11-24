@@ -119,7 +119,10 @@ async function enterRoom(code,create){
    setStatus("Room already exists. Try another code.");
    return;
   }
-  await ref.set({created:Date.now()});
+ await ref.set({
+ host: uid,
+ createdAt: Date.now()
+});
  }else if(!snapshot.exists()){
   setStatus("Room not found. Check the code.");
   return;
