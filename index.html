@@ -1,0 +1,291 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bouncy Ball Arena</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;background:#101522;color:white;
+  font-family:Arial,sans-serif;min-height:100vh
+}
+header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:20px 7%;border-bottom:1px solid #293449
+}
+.logo{font-size:22px;font-weight:900;letter-spacing:1px}
+.logo span{color:#55e5a0}
+nav{color:#aebbd0;font-size:14px}
+main{max-width:1100px;margin:55px auto;padding:0 20px}
+.hero{text-align:center;margin-bottom:35px}
+.tag{
+  display:inline-block;padding:7px 13px;border-radius:20px;
+  background:#193d35;color:#65e5a8;font-size:12px
+}
+h1{font-size:clamp(38px,7vw,65px);margin:18px 0 10px}
+h1 span{color:#55e5a0}
+.subtitle{color:#aebbd0;line-height:1.6}
+.layout{
+  display:grid;grid-template-columns:1.5fr 1fr;gap:20px
+}
+.panel{
+  background:#1b2638;border:1px solid #2b3a50;
+  border-radius:17px;padding:22px
+}
+.panel h2{margin-top:0}
+canvas{
+  display:block;width:100%;background:#b9e4f8;
+  border-radius:12px;border:2px solid #40546c
+}
+button,input{
+  border:0;border-radius:9px;padding:13px;
+  font-size:15px
+}
+button{cursor:pointer;font-weight:bold}
+.primary{background:#55e5a0;color:#10241a;width:100%}
+.secondary{background:#34445c;color:white;width:100%}
+button:hover{filter:brightness(1.1)}
+input{
+  width:100%;background:#101a2a;color:white;
+  border:1px solid #40516a;margin:8px 0
+}
+.actions{display:grid;gap:11px;margin-top:18px}
+.small{font-size:13px;color:#9eafc5;line-height:1.5}
+#gameStatus{color:#65e5a8;min-height:20px}
+#gamePanel{display:none;margin-top:20px}
+.gameTop{display:flex;justify-content:space-between;gap:10px;align-items:center}
+kbd{
+  background:#34445c;padding:4px 7px;border-radius:5px;
+  color:white
+}
+footer{text-align:center;color:#718198;padding:35px 10px;font-size:12px}
+@media(max-width:750px){
+ .layout{grid-template-columns:1fr}
+ main{margin-top:35px}
+ header{padding:18px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">BOUNCY<span>ARENA</span></div>
+  <nav>PHYSICS · ARENAS · MULTIPLAYER</nav>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="tag">WELCOME TO THE ARENA</div>
+    <h1>ENTER THE <span>ARENA.</span></h1>
+    <p class="subtitle">
+      Jump in, master the physics, and compete with friends.<br>
+      Your next match starts here.
+    </p>
+  </section>
+
+  <section class="layout">
+    <div class="panel">
+      <h2>🏟️ Arena Preview</h2>
+      <canvas id="preview" width="700" height="390"></canvas>
+      <p class="small">
+        Try the physics demo. Move around the platforms and practice jumping.
+      </p>
+      <button class="primary" id="playButton">PLAY DEMO</button>
+    </div>
+
+    <div class="panel">
+      <h2>Multiplayer</h2>
+      <p class="small">
+        Create a private room or join your friends using a room code.
+      </p>
+
+      <div class="actions">
+        <button class="primary" id="createButton">＋ CREATE ROOM</button>
+        <input id="roomInput" maxlength="5"
+          placeholder="ENTER ROOM CODE">
+        <button class="secondary" id="joinButton">JOIN ROOM</button>
+      </div>
+
+      <p id="gameStatus" class="small">
+        Multiplayer server setup is the next step.
+      </p>
+    </div>
+  </section>
+
+  <section class="panel" id="gamePanel">
+    <div class="gameTop">
+      <h2>Practice Arena</h2>
+      <button class="secondary" id="exitButton">EXIT</button>
+    </div>
+    <canvas id="game" width="900" height="500"></canvas>
+    <p class="small">
+      Controls: <kbd>A</kbd> <kbd>D</kbd> to move,
+      <kbd>W</kbd> or <kbd>SPACE</kbd> to jump.
+    </p>
+  </section>
+</main>
+
+<footer>
+  BOUNCY ARENA · AN ORIGINAL PHYSICS GAME
+</footer>
+
+<script>
+const preview = document.getElementById("preview");
+const pctx = preview.getContext("2d");
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const platforms = [
+  {x:100,y:330,w:180,h:15},
+  {x:350,y:255,w:180,h:15},
+  {x:600,y:330,w:170,h:15}
+];
+
+function drawScene(c, w, h, ballX, ballY) {
+  const g = c.createLinearGradient(0,0,0,h);
+  g.addColorStop(0,"#b9e8ff");
+  g.addColorStop(1,"#e8f7ff");
+  c.fillStyle=g;
+  c.fillRect(0,0,w,h);
+
+  // Clouds
+  c.fillStyle="rgba(255,255,255,.8)";
+  for(let i=0;i<4;i++){
+    let x=90+i*190;
+    c.beginPath();
+    c.arc(x,75,23,0,Math.PI*2);
+    c.arc(x+25,65,30,0,Math.PI*2);
+    c.arc(x+53,78,22,0,Math.PI*2);
+    c.fill();
+  }
+
+  // Platforms
+  platforms.forEach(p=>{
+    const scale=w/900;
+    c.fillStyle="#53647d";
+    c.fillRect(p.x*scale,p.y*(h/500),p.w*scale,15*scale);
+    c.fillStyle="#55d99a";
+    c.fillRect(p.x*scale,p.y*(h/500),p.w*scale,5*scale);
+  });
+
+  c.fillStyle="#40a86d";
+  c.fillRect(0,h-45,w,45);
+
+  c.fillStyle="#26824f";
+  c.fillRect(0,h-37,w,7);
+
+  // Player
+  c.fillStyle="#ff595e";
+  c.beginPath();
+  c.arc(ballX,ballY,19,0,Math.PI*2);
+  c.fill();
+  c.strokeStyle="#263448";
+  c.lineWidth=3;
+  c.stroke();
+
+  c.fillStyle="#263448";
+  c.beginPath();
+  c.arc(ballX-6,ballY-3,2.5,0,Math.PI*2);
+  c.arc(ballX+6,ballY-3,2.5,0,Math.PI*2);
+  c.fill();
+}
+
+drawScene(pctx,700,390,180,270);
+
+let active=false;
+let keys={};
+let player={x:120,y:200,vx:0,vy:0,onGround:false};
+
+window.addEventListener("keydown",e=>{
+  keys[e.key.toLowerCase()]=true;
+  if([" ","arrowup","arrowleft","arrowright"].includes(e.key.toLowerCase()))
+    e.preventDefault();
+});
+window.addEventListener("keyup",e=>{
+  keys[e.key.toLowerCase()]=false;
+});
+
+function startGame(){
+  active=true;
+  player={x:120,y:200,vx:0,vy:0,onGround:false};
+  document.getElementById("gamePanel").style.display="block";
+  document.getElementById("gamePanel").scrollIntoView({behavior:"smooth"});
+  requestAnimationFrame(loop);
+}
+
+function update(){
+  if(keys.a||keys.arrowleft)player.vx-=0.65;
+  if(keys.d||keys.arrowright)player.vx+=0.65;
+
+  player.vx*=0.91;
+  player.vx=Math.max(-7,Math.min(7,player.vx));
+
+  if((keys.w||keys[" "]||keys.arrowup)&&player.onGround){
+    player.vy=-12;
+    player.onGround=false;
+  }
+
+  player.vy+=0.55;
+  player.x+=player.vx;
+  player.y+=player.vy;
+  player.onGround=false;
+
+  player.x=Math.max(19,Math.min(881,player.x));
+
+  const oldY=player.y-player.vy;
+
+  if(player.y+19>=455){
+    player.y=436;
+    player.vy=0;
+    player.onGround=true;
+  }
+
+  platforms.forEach(p=>{
+    if(player.vy>=0 &&
+       oldY+19<=p.y &&
+       player.y+19>=p.y &&
+       player.x+15>p.x &&
+       player.x-15<p.x+p.w){
+      player.y=p.y-19;
+      player.vy=0;
+      player.onGround=true;
+    }
+  });
+
+  if(player.y>550){
+    player.x=100;
+    player.y=100;
+    player.vy=0;
+  }
+}
+
+function loop(){
+  if(!active)return;
+  update();
+  drawScene(ctx,900,500,player.x,player.y);
+  requestAnimationFrame(loop);
+}
+
+document.getElementById("playButton").onclick=startGame;
+document.getElementById("exitButton").onclick=()=>{
+  active=false;
+  document.getElementById("gamePanel").style.display="none";
+};
+
+document.getElementById("createButton").onclick=()=>{
+  document.getElementById("gameStatus").textContent=
+    "Room creation will be enabled after Firebase multiplayer setup.";
+};
+
+document.getElementById("joinButton").onclick=()=>{
+  const code=document.getElementById("roomInput").value.trim().toUpperCase();
+  document.getElementById("gameStatus").textContent=
+    code.length===5
+    ? "Multiplayer server setup is needed before joining rooms."
+    : "Enter a 5-character room code.";
+};
+</script>
+</body>
+</html>
