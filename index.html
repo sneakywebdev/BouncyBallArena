@@ -4,288 +4,264 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bouncy Ball Arena</title>
+<title>Bouncy Arena</title>
 <style>
 *{box-sizing:border-box}
-body{
-  margin:0;background:#101522;color:white;
-  font-family:Arial,sans-serif;min-height:100vh
-}
-header{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:20px 7%;border-bottom:1px solid #293449
-}
-.logo{font-size:22px;font-weight:900;letter-spacing:1px}
-.logo span{color:#55e5a0}
-nav{color:#aebbd0;font-size:14px}
-main{max-width:1100px;margin:55px auto;padding:0 20px}
-.hero{text-align:center;margin-bottom:35px}
-.tag{
-  display:inline-block;padding:7px 13px;border-radius:20px;
-  background:#193d35;color:#65e5a8;font-size:12px
-}
-h1{font-size:clamp(38px,7vw,65px);margin:18px 0 10px}
-h1 span{color:#55e5a0}
-.subtitle{color:#aebbd0;line-height:1.6}
-.layout{
-  display:grid;grid-template-columns:1.5fr 1fr;gap:20px
-}
-.panel{
-  background:#1b2638;border:1px solid #2b3a50;
-  border-radius:17px;padding:22px
-}
-.panel h2{margin-top:0}
-canvas{
-  display:block;width:100%;background:#b9e4f8;
-  border-radius:12px;border:2px solid #40546c
-}
-button,input{
-  border:0;border-radius:9px;padding:13px;
-  font-size:15px
-}
-button{cursor:pointer;font-weight:bold}
-.primary{background:#55e5a0;color:#10241a;width:100%}
-.secondary{background:#34445c;color:white;width:100%}
-button:hover{filter:brightness(1.1)}
-input{
-  width:100%;background:#101a2a;color:white;
-  border:1px solid #40516a;margin:8px 0
-}
-.actions{display:grid;gap:11px;margin-top:18px}
-.small{font-size:13px;color:#9eafc5;line-height:1.5}
-#gameStatus{color:#65e5a8;min-height:20px}
-#gamePanel{display:none;margin-top:20px}
-.gameTop{display:flex;justify-content:space-between;gap:10px;align-items:center}
-kbd{
-  background:#34445c;padding:4px 7px;border-radius:5px;
-  color:white
-}
-footer{text-align:center;color:#718198;padding:35px 10px;font-size:12px}
-@media(max-width:750px){
- .layout{grid-template-columns:1fr}
- main{margin-top:35px}
- header{padding:18px}
-}
+body{margin:0;background:#101522;color:white;font-family:Arial,sans-serif}
+header{padding:20px 7%;border-bottom:1px solid #293449;display:flex;justify-content:space-between}
+.logo{font-size:22px;font-weight:900}
+.logo span,h1 span{color:#55e5a0}
+nav{color:#aebbd0;font-size:13px}
+main{max-width:1100px;margin:45px auto;padding:0 20px}
+.hero{text-align:center;margin-bottom:30px}
+.tag{background:#193d35;color:#65e5a8;padding:7px 13px;border-radius:20px;font-size:12px}
+h1{font-size:clamp(38px,7vw,65px);margin:20px 0 10px}
+.subtitle{color:#aebbd0}
+.layout{display:grid;grid-template-columns:1.5fr 1fr;gap:20px}
+.panel{background:#1b2638;border:1px solid #2b3a50;border-radius:17px;padding:22px}
+canvas{width:100%;background:#101522;border-radius:12px;display:block}
+button,input{padding:13px;border-radius:9px;border:0;font-size:14px}
+button{background:#55e5a0;color:#102018;font-weight:bold;cursor:pointer;margin:5px 0;width:100%}
+button.secondary{background:#34445d;color:white}
+input{width:100%;background:#101522;color:white;border:1px solid #34445d;margin:8px 0}
+.status{color:#aebbd0;font-size:13px;line-height:1.5}
+#roomCode{font-size:24px;color:#55e5a0;font-weight:bold;letter-spacing:3px}
+@media(max-width:750px){.layout{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-
 <header>
   <div class="logo">BOUNCY<span>ARENA</span></div>
   <nav>PHYSICS · ARENAS · MULTIPLAYER</nav>
 </header>
 
 <main>
-  <section class="hero">
-    <div class="tag">WELCOME TO THE ARENA</div>
-    <h1>ENTER THE <span>ARENA.</span></h1>
-    <p class="subtitle">
-      Jump in, master the physics, and compete with friends.<br>
-      Your next match starts here.
-    </p>
+<section class="hero">
+  <span class="tag">WELCOME TO THE ARENA</span>
+  <h1>ENTER THE <span>ARENA.</span></h1>
+  <p class="subtitle">Jump in, master the physics, and compete with friends.</p>
+</section>
+
+<div class="layout">
+  <section class="panel">
+    <h2>🏟️ Arena</h2>
+    <canvas id="game" width="700" height="400"></canvas>
+    <p class="status">Controls: A/D or arrow keys to move. W, Space, or Up to jump.</p>
+    <button id="play">PLAY / RESUME</button>
+    <button class="secondary" id="exit">EXIT ROOM</button>
   </section>
 
-  <section class="layout">
-    <div class="panel">
-      <h2>🏟️ Arena Preview</h2>
-      <canvas id="preview" width="700" height="390"></canvas>
-      <p class="small">
-        Try the physics demo. Move around the platforms and practice jumping.
-      </p>
-      <button class="primary" id="playButton">PLAY DEMO</button>
-    </div>
-
-    <div class="panel">
-      <h2>Multiplayer</h2>
-      <p class="small">
-        Create a private room or join your friends using a room code.
-      </p>
-
-      <div class="actions">
-        <button class="primary" id="createButton">＋ CREATE ROOM</button>
-        <input id="roomInput" maxlength="5"
-          placeholder="ENTER ROOM CODE">
-        <button class="secondary" id="joinButton">JOIN ROOM</button>
-      </div>
-
-      <p id="gameStatus" class="small">
-        Multiplayer server setup is the next step.
-      </p>
-    </div>
+  <section class="panel">
+    <h2>Multiplayer</h2>
+    <p class="status" id="status">Connecting to Firebase...</p>
+    <button id="create">＋ CREATE ROOM</button>
+    <p class="status">Your room code:</p>
+    <div id="roomCode">------</div>
+    <p class="status">Share this code with your friends.</p>
+    <input id="joinCode" maxlength="6" placeholder="Enter room code">
+    <button class="secondary" id="join">JOIN ROOM</button>
+    <p class="status" id="players">Players: 0/4</p>
   </section>
-
-  <section class="panel" id="gamePanel">
-    <div class="gameTop">
-      <h2>Practice Arena</h2>
-      <button class="secondary" id="exitButton">EXIT</button>
-    </div>
-    <canvas id="game" width="900" height="500"></canvas>
-    <p class="small">
-      Controls: <kbd>A</kbd> <kbd>D</kbd> to move,
-      <kbd>W</kbd> or <kbd>SPACE</kbd> to jump.
-    </p>
-  </section>
+</div>
 </main>
 
-<footer>
-  BOUNCY ARENA · AN ORIGINAL PHYSICS GAME
-</footer>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 
 <script>
-const preview = document.getElementById("preview");
-const pctx = preview.getContext("2d");
+const firebaseConfig = {
+  apiKey: "AIzaSyA7mmK1Ljk2As5dPCfNAvt9CvF17G6maOE",
+  authDomain: "bouncyballarena-70cf9.firebaseapp.com",
+  databaseURL: "https://bouncyballarena-70cf9-default-rtdb.firebaseio.com",
+  projectId: "bouncyballarena-70cf9",
+  storageBucket: "bouncyballarena-70cf9.firebasestorage.app",
+  messagingSenderId: "1007913424936",
+  appId: "1:1007913424936:web:8ed5bde9eb78692834bd1d",
+  measurementId: "G-9Y8FXKXEK6"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
+const statusText = document.getElementById("status");
+const roomCodeText = document.getElementById("roomCode");
+const playersText = document.getElementById("players");
 
-const platforms = [
-  {x:100,y:330,w:180,h:15},
-  {x:350,y:255,w:180,h:15},
-  {x:600,y:330,w:170,h:15}
-];
+let uid = null;
+let room = null;
+let playerRef = null;
+let players = {};
+let running = false;
+let keys = {};
+let lastSend = 0;
 
-function drawScene(c, w, h, ballX, ballY) {
-  const g = c.createLinearGradient(0,0,0,h);
-  g.addColorStop(0,"#b9e8ff");
-  g.addColorStop(1,"#e8f7ff");
-  c.fillStyle=g;
-  c.fillRect(0,0,w,h);
+const me = {x:100,y:280,vx:0,vy:0};
+const ground = 350;
 
-  // Clouds
-  c.fillStyle="rgba(255,255,255,.8)";
-  for(let i=0;i<4;i++){
-    let x=90+i*190;
-    c.beginPath();
-    c.arc(x,75,23,0,Math.PI*2);
-    c.arc(x+25,65,30,0,Math.PI*2);
-    c.arc(x+53,78,22,0,Math.PI*2);
-    c.fill();
-  }
+auth.signInAnonymously().then(result=>{
+  uid = result.user.uid;
+  statusText.textContent = "Connected! Create a room or join a friend.";
+}).catch(error=>{
+  statusText.textContent = "Connection error: " + error.message;
+});
 
-  // Platforms
-  platforms.forEach(p=>{
-    const scale=w/900;
-    c.fillStyle="#53647d";
-    c.fillRect(p.x*scale,p.y*(h/500),p.w*scale,15*scale);
-    c.fillStyle="#55d99a";
-    c.fillRect(p.x*scale,p.y*(h/500),p.w*scale,5*scale);
-  });
-
-  c.fillStyle="#40a86d";
-  c.fillRect(0,h-45,w,45);
-
-  c.fillStyle="#26824f";
-  c.fillRect(0,h-37,w,7);
-
-  // Player
-  c.fillStyle="#ff595e";
-  c.beginPath();
-  c.arc(ballX,ballY,19,0,Math.PI*2);
-  c.fill();
-  c.strokeStyle="#263448";
-  c.lineWidth=3;
-  c.stroke();
-
-  c.fillStyle="#263448";
-  c.beginPath();
-  c.arc(ballX-6,ballY-3,2.5,0,Math.PI*2);
-  c.arc(ballX+6,ballY-3,2.5,0,Math.PI*2);
-  c.fill();
+function makeCode(){
+  return Math.random().toString(36).substring(2,8).toUpperCase();
 }
 
-drawScene(pctx,700,390,180,270);
+async function createRoom(){
+  if(!uid){statusText.textContent="Still connecting. Try again.";return;}
+  const code = makeCode();
+  const ref = db.ref("rooms/"+code);
+  try{
+    await ref.child("host").set(uid);
+    await ref.child("createdAt").set(firebase.database.ServerValue.TIMESTAMP);
+    await enterRoom(code);
+  }catch(e){
+    statusText.textContent="Could not create room: "+e.message;
+  }
+}
 
-let active=false;
-let keys={};
-let player={x:120,y:200,vx:0,vy:0,onGround:false};
+async function joinRoom(){
+  if(!uid){statusText.textContent="Still connecting. Try again.";return;}
+  const code = document.getElementById("joinCode").value.trim().toUpperCase();
+  if(!/^[A-Z0-9]{6}$/.test(code)){
+    statusText.textContent="Enter a valid 6-character code.";
+    return;
+  }
+  try{
+    const ref = db.ref("rooms/"+code);
+    const snap = await ref.child("host").once("value");
+    if(!snap.exists()){
+      statusText.textContent="Room not found.";
+      return;
+    }
+    await enterRoom(code);
+  }catch(e){
+    statusText.textContent="Could not join: "+e.message;
+  }
+}
+
+async function enterRoom(code){
+  if(room) await leaveRoom();
+  room = code;
+  const roomRef = db.ref("rooms/"+code);
+  playerRef = roomRef.child("players/"+uid);
+
+  const existing = await roomRef.child("players").once("value");
+  const count = existing.numChildren();
+  if(count >= 4){
+    room = null;
+    playerRef = null;
+    statusText.textContent="This room is full.";
+    return;
+  }
+
+  me.x = 80 + count*90;
+  me.y = 280;
+  me.vx = 0;
+  me.vy = 0;
+
+  await playerRef.set({
+    x:me.x,y:me.y,name:"Player",updatedAt:Date.now()
+  });
+  playerRef.onDisconnect().remove();
+
+  roomCodeText.textContent = code;
+  statusText.textContent = "You're in room "+code+"!";
+  running = true;
+
+  roomRef.child("players").on("value",snap=>{
+    players = snap.val() || {};
+    playersText.textContent = "Players: "+Object.keys(players).length+"/4";
+  });
+}
+
+async function leaveRoom(){
+  if(!room)return;
+  const oldRoom = room;
+  if(playerRef){
+    await playerRef.onDisconnect().cancel();
+    await playerRef.remove();
+  }
+  db.ref("rooms/"+oldRoom+"/players").off();
+  room = null;
+  playerRef = null;
+  players = {};
+  roomCodeText.textContent = "------";
+  playersText.textContent = "Players: 0/4";
+  statusText.textContent = "You left the room.";
+}
+
+document.getElementById("create").onclick = createRoom;
+document.getElementById("join").onclick = joinRoom;
+document.getElementById("exit").onclick = leaveRoom;
+document.getElementById("play").onclick = ()=>{running=true;};
 
 window.addEventListener("keydown",e=>{
-  keys[e.key.toLowerCase()]=true;
-  if([" ","arrowup","arrowleft","arrowright"].includes(e.key.toLowerCase()))
-    e.preventDefault();
+  keys[e.key.toLowerCase()] = true;
+  if([" ","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.key))e.preventDefault();
 });
-window.addEventListener("keyup",e=>{
-  keys[e.key.toLowerCase()]=false;
-});
+window.addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
 
-function startGame(){
-  active=true;
-  player={x:120,y:200,vx:0,vy:0,onGround:false};
-  document.getElementById("gamePanel").style.display="block";
-  document.getElementById("gamePanel").scrollIntoView({behavior:"smooth"});
-  requestAnimationFrame(loop);
+function draw(){
+  ctx.clearRect(0,0,700,400);
+  ctx.fillStyle="#26354a";
+  ctx.fillRect(0,ground,700,50);
+  ctx.fillStyle="#55e5a0";
+  ctx.fillRect(180,260,130,12);
+  ctx.fillRect(420,210,130,12);
+
+  for(const [id,p] of Object.entries(players)){
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,18,0,Math.PI*2);
+    ctx.fillStyle=id===uid?"#55e5a0":"#69a8ff";
+    ctx.fill();
+    ctx.fillStyle="white";
+    ctx.font="12px Arial";
+    ctx.textAlign="center";
+    ctx.fillText(id===uid?"You":"Friend",p.x,p.y-27);
+  }
+
+  if(!room){
+    ctx.beginPath();
+    ctx.arc(me.x,me.y,18,0,Math.PI*2);
+    ctx.fillStyle="#55e5a0";
+    ctx.fill();
+  }
 }
 
 function update(){
-  if(keys.a||keys.arrowleft)player.vx-=0.65;
-  if(keys.d||keys.arrowright)player.vx+=0.65;
+  if(running){
+    if(keys["a"]||keys["arrowleft"])me.vx=-4;
+    else if(keys["d"]||keys["arrowright"])me.vx=4;
+    else me.vx*=0.8;
 
-  player.vx*=0.91;
-  player.vx=Math.max(-7,Math.min(7,player.vx));
-
-  if((keys.w||keys[" "]||keys.arrowup)&&player.onGround){
-    player.vy=-12;
-    player.onGround=false;
-  }
-
-  player.vy+=0.55;
-  player.x+=player.vx;
-  player.y+=player.vy;
-  player.onGround=false;
-
-  player.x=Math.max(19,Math.min(881,player.x));
-
-  const oldY=player.y-player.vy;
-
-  if(player.y+19>=455){
-    player.y=436;
-    player.vy=0;
-    player.onGround=true;
-  }
-
-  platforms.forEach(p=>{
-    if(player.vy>=0 &&
-       oldY+19<=p.y &&
-       player.y+19>=p.y &&
-       player.x+15>p.x &&
-       player.x-15<p.x+p.w){
-      player.y=p.y-19;
-      player.vy=0;
-      player.onGround=true;
+    if((keys["w"]||keys[" "]||keys["arrowup"])&&me.y>=ground-18){
+      me.vy=-11;
     }
-  });
 
-  if(player.y>550){
-    player.x=100;
-    player.y=100;
-    player.vy=0;
+    me.vy+=0.5;
+    me.x+=me.vx;
+    me.y+=me.vy;
+    me.x=Math.max(18,Math.min(682,me.x));
+
+    if(me.y>ground-18){me.y=ground-18;me.vy=0;}
+
+    const now=Date.now();
+    if(room && playerRef && now-lastSend>90){
+      lastSend=now;
+      playerRef.update({x:me.x,y:me.y,updatedAt:now});
+    }
   }
+  draw();
+  requestAnimationFrame(update);
 }
-
-function loop(){
-  if(!active)return;
-  update();
-  drawScene(ctx,900,500,player.x,player.y);
-  requestAnimationFrame(loop);
-}
-
-document.getElementById("playButton").onclick=startGame;
-document.getElementById("exitButton").onclick=()=>{
-  active=false;
-  document.getElementById("gamePanel").style.display="none";
-};
-
-document.getElementById("createButton").onclick=()=>{
-  document.getElementById("gameStatus").textContent=
-    "Room creation will be enabled after Firebase multiplayer setup.";
-};
-
-document.getElementById("joinButton").onclick=()=>{
-  const code=document.getElementById("roomInput").value.trim().toUpperCase();
-  document.getElementById("gameStatus").textContent=
-    code.length===5
-    ? "Multiplayer server setup is needed before joining rooms."
-    : "Enter a 5-character room code.";
-};
+update();
 </script>
 </body>
 </html>
