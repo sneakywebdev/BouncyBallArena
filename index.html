@@ -3,65 +3,60 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Bouncy Arena</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#101522;color:white;font-family:Arial,sans-serif}
-header{padding:20px 7%;border-bottom:1px solid #293449;display:flex;justify-content:space-between}
-.logo{font-size:22px;font-weight:900}
+header{padding:20px 7%;border-bottom:1px solid #293449}
+.logo{font-size:23px;font-weight:900}
 .logo span,h1 span{color:#55e5a0}
-nav{color:#aebbd0;font-size:13px}
-main{max-width:1100px;margin:45px auto;padding:0 20px}
+main{max-width:1050px;margin:45px auto;padding:20px}
 .hero{text-align:center;margin-bottom:30px}
-.tag{background:#193d35;color:#65e5a8;padding:7px 13px;border-radius:20px;font-size:12px}
-h1{font-size:clamp(38px,7vw,65px);margin:20px 0 10px}
-.subtitle{color:#aebbd0}
-.layout{display:grid;grid-template-columns:1.5fr 1fr;gap:20px}
+.tag{color:#65e5a8;background:#193d35;padding:8px 13px;border-radius:20px}
+h1{font-size:clamp(38px,7vw,65px)}
+.subtitle,.status{color:#aebbd0}
+.layout{display:grid;grid-template-columns:1.4fr 1fr;gap:20px}
 .panel{background:#1b2638;border:1px solid #2b3a50;border-radius:17px;padding:22px}
-canvas{width:100%;background:#101522;border-radius:12px;display:block}
-button,input{padding:13px;border-radius:9px;border:0;font-size:14px}
-button{background:#55e5a0;color:#102018;font-weight:bold;cursor:pointer;margin:5px 0;width:100%}
-button.secondary{background:#34445d;color:white}
-input{width:100%;background:#101522;color:white;border:1px solid #34445d;margin:8px 0}
-.status{color:#aebbd0;font-size:13px;line-height:1.5}
-#roomCode{font-size:24px;color:#55e5a0;font-weight:bold;letter-spacing:3px}
+canvas{width:100%;background:#b9e8ff;border-radius:12px;display:block}
+button,input{width:100%;padding:13px;margin:7px 0;border:0;border-radius:9px;font-size:15px}
+button{background:#55e5a0;color:#102018;font-weight:bold;cursor:pointer}
+.secondary{background:#34445d;color:white}
+input{background:#101522;color:white;border:1px solid #40516a}
+#roomCode{font-size:25px;color:#55e5a0;letter-spacing:3px}
+#gamePanel{display:none;margin-top:20px}
 @media(max-width:750px){.layout{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<header>
-  <div class="logo">BOUNCY<span>ARENA</span></div>
-  <nav>PHYSICS · ARENAS · MULTIPLAYER</nav>
-</header>
-
+<header><div class="logo">BOUNCY<span>ARENA</span></div></header>
 <main>
 <section class="hero">
-  <span class="tag">WELCOME TO THE ARENA</span>
-  <h1>ENTER THE <span>ARENA.</span></h1>
-  <p class="subtitle">Jump in, master the physics, and compete with friends.</p>
+<span class="tag">WELCOME TO THE ARENA</span>
+<h1>ENTER THE <span>ARENA.</span></h1>
+<p class="subtitle">Jump in, master the physics, and compete with friends.</p>
 </section>
 
 <div class="layout">
-  <section class="panel">
-    <h2>🏟️ Arena</h2>
-    <canvas id="game" width="700" height="400"></canvas>
-    <p class="status">Controls: A/D or arrow keys to move. W, Space, or Up to jump.</p>
-    <button id="play">PLAY / RESUME</button>
-    <button class="secondary" id="exit">EXIT ROOM</button>
-  </section>
+<section class="panel">
+<h2>🏟️ Arena</h2>
+<canvas id="game" width="700" height="400"></canvas>
+<p class="status">A/D or arrow keys to move. W, Space, or Up to jump.</p>
+<button id="play">PLAY / RESUME</button>
+<button class="secondary" id="exit">EXIT ROOM</button>
+</section>
 
-  <section class="panel">
-    <h2>Multiplayer</h2>
-    <p class="status" id="status">Connecting to Firebase...</p>
-    <button id="create">＋ CREATE ROOM</button>
-    <p class="status">Your room code:</p>
-    <div id="roomCode">------</div>
-    <p class="status">Share this code with your friends.</p>
-    <input id="joinCode" maxlength="6" placeholder="Enter room code">
-    <button class="secondary" id="join">JOIN ROOM</button>
-    <p class="status" id="players">Players: 0/4</p>
-  </section>
+<section class="panel">
+<h2>Multiplayer</h2>
+<p class="status" id="status">Connecting to Firebase...</p>
+<button id="create">＋ CREATE ROOM</button>
+<p class="status">Your room code:</p>
+<div id="roomCode">------</div>
+<p class="status">Share this code with friends.</p>
+<input id="joinCode" maxlength="6" placeholder="ENTER ROOM CODE">
+<button class="secondary" id="join">JOIN ROOM</button>
+<p class="status" id="players">Players: 0</p>
+</section>
 </div>
 </main>
 
@@ -82,14 +77,14 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
 const db = firebase.database();
+const auth = firebase.auth();
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-const statusText = document.getElementById("status");
-const roomCodeText = document.getElementById("roomCode");
-const playersText = document.getElementById("players");
+const statusEl = document.getElementById("status");
+const codeEl = document.getElementById("roomCode");
+const playersEl = document.getElementById("players");
 
 let uid = null;
 let room = null;
@@ -97,151 +92,161 @@ let playerRef = null;
 let players = {};
 let running = false;
 let keys = {};
-let lastSend = 0;
+let lastSent = 0;
 
-const me = {x:100,y:280,vx:0,vy:0};
-const ground = 350;
+const me = {x:100,y:300,vx:0,vy:0};
 
 auth.signInAnonymously().then(result=>{
   uid = result.user.uid;
-  statusText.textContent = "Connected! Create a room or join a friend.";
+  statusEl.textContent = "Connected! Create a room or join one.";
 }).catch(error=>{
-  statusText.textContent = "Connection error: " + error.message;
+  statusEl.textContent = "Sign-in error: " + error.message;
 });
 
-function makeCode(){
+function newCode(){
   return Math.random().toString(36).substring(2,8).toUpperCase();
 }
 
 async function createRoom(){
-  if(!uid){statusText.textContent="Still connecting. Try again.";return;}
-  const code = makeCode();
+  if(!uid){statusEl.textContent="Still connecting...";return;}
+
+  const code = newCode();
   const ref = db.ref("rooms/"+code);
+
   try{
-    await ref.child("host").set(uid);
-    await ref.child("createdAt").set(firebase.database.ServerValue.TIMESTAMP);
+    await ref.set({
+      host:uid,
+      createdAt:firebase.database.ServerValue.TIMESTAMP,
+      players:{
+        [uid]:{x:100,y:300,name:"Player",updatedAt:Date.now()}
+      }
+    });
     await enterRoom(code);
-  }catch(e){
-    statusText.textContent="Could not create room: "+e.message;
+  }catch(error){
+    statusEl.textContent="Create failed: "+error.message;
   }
 }
 
 async function joinRoom(){
-  if(!uid){statusText.textContent="Still connecting. Try again.";return;}
+  if(!uid){statusEl.textContent="Still connecting...";return;}
+
   const code = document.getElementById("joinCode").value.trim().toUpperCase();
+
   if(!/^[A-Z0-9]{6}$/.test(code)){
-    statusText.textContent="Enter a valid 6-character code.";
+    statusEl.textContent="Enter a 6-character room code.";
     return;
   }
+
   try{
     const ref = db.ref("rooms/"+code);
-    const snap = await ref.child("host").once("value");
+    const snap = await ref.child("players").once("value");
+
     if(!snap.exists()){
-      statusText.textContent="Room not found.";
+      statusEl.textContent="Room not found.";
       return;
     }
+
+    if(snap.numChildren()>=4){
+      statusEl.textContent="Room is full.";
+      return;
+    }
+
+    await ref.child("players/"+uid).set({
+      x:150,y:300,name:"Player",updatedAt:Date.now()
+    });
+
     await enterRoom(code);
-  }catch(e){
-    statusText.textContent="Could not join: "+e.message;
+  }catch(error){
+    statusEl.textContent="Join failed: "+error.message;
   }
 }
 
 async function enterRoom(code){
   if(room) await leaveRoom();
-  room = code;
-  const roomRef = db.ref("rooms/"+code);
-  playerRef = roomRef.child("players/"+uid);
 
-  const existing = await roomRef.child("players").once("value");
-  const count = existing.numChildren();
-  if(count >= 4){
-    room = null;
-    playerRef = null;
-    statusText.textContent="This room is full.";
-    return;
-  }
-
-  me.x = 80 + count*90;
-  me.y = 280;
-  me.vx = 0;
-  me.vy = 0;
-
-  await playerRef.set({
-    x:me.x,y:me.y,name:"Player",updatedAt:Date.now()
-  });
+  room=code;
+  const ref=db.ref("rooms/"+code);
+  playerRef=ref.child("players/"+uid);
   playerRef.onDisconnect().remove();
 
-  roomCodeText.textContent = code;
-  statusText.textContent = "You're in room "+code+"!";
-  running = true;
+  codeEl.textContent=code;
+  statusEl.textContent="Joined room "+code+"!";
+  running=true;
 
-  roomRef.child("players").on("value",snap=>{
-    players = snap.val() || {};
-    playersText.textContent = "Players: "+Object.keys(players).length+"/4";
+  ref.child("players").on("value",snap=>{
+    players=snap.val()||{};
+    playersEl.textContent="Players: "+Object.keys(players).length;
   });
 }
 
 async function leaveRoom(){
   if(!room)return;
-  const oldRoom = room;
-  if(playerRef){
-    await playerRef.onDisconnect().cancel();
-    await playerRef.remove();
+
+  const oldRoom=room;
+  const oldPlayerRef=playerRef;
+
+  room=null;
+  playerRef=null;
+  players={};
+
+  if(oldPlayerRef){
+    await oldPlayerRef.onDisconnect().cancel();
+    await oldPlayerRef.remove();
   }
+
   db.ref("rooms/"+oldRoom+"/players").off();
-  room = null;
-  playerRef = null;
-  players = {};
-  roomCodeText.textContent = "------";
-  playersText.textContent = "Players: 0/4";
-  statusText.textContent = "You left the room.";
+  codeEl.textContent="------";
+  playersEl.textContent="Players: 0";
+  statusEl.textContent="You left the room.";
 }
 
-document.getElementById("create").onclick = createRoom;
-document.getElementById("join").onclick = joinRoom;
-document.getElementById("exit").onclick = leaveRoom;
-document.getElementById("play").onclick = ()=>{running=true;};
+document.getElementById("create").onclick=createRoom;
+document.getElementById("join").onclick=joinRoom;
+document.getElementById("exit").onclick=leaveRoom;
+document.getElementById("play").onclick=()=>running=true;
 
 window.addEventListener("keydown",e=>{
-  keys[e.key.toLowerCase()] = true;
-  if([" ","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.key))e.preventDefault();
+  keys[e.key.toLowerCase()]=true;
+  if([" ","ArrowUp","ArrowLeft","ArrowRight"].includes(e.key))e.preventDefault();
 });
 window.addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
 
 function draw(){
   ctx.clearRect(0,0,700,400);
-  ctx.fillStyle="#26354a";
-  ctx.fillRect(0,ground,700,50);
+
+  ctx.fillStyle="#53647d";
+  ctx.fillRect(0,350,700,50);
   ctx.fillStyle="#55e5a0";
-  ctx.fillRect(180,260,130,12);
-  ctx.fillRect(420,210,130,12);
+  ctx.fillRect(170,270,140,12);
+  ctx.fillRect(420,220,140,12);
 
   for(const [id,p] of Object.entries(players)){
     ctx.beginPath();
     ctx.arc(p.x,p.y,18,0,Math.PI*2);
-    ctx.fillStyle=id===uid?"#55e5a0":"#69a8ff";
+    ctx.fillStyle=id===uid?"#ff595e":"#3478db";
     ctx.fill();
-    ctx.fillStyle="white";
+
+    ctx.fillStyle="#172033";
     ctx.font="12px Arial";
     ctx.textAlign="center";
-    ctx.fillText(id===uid?"You":"Friend",p.x,p.y-27);
+    ctx.fillText(id===uid?"You":"Friend",p.x,p.y-25);
   }
 
   if(!room){
     ctx.beginPath();
     ctx.arc(me.x,me.y,18,0,Math.PI*2);
-    ctx.fillStyle="#55e5a0";
+    ctx.fillStyle="#ff595e";
     ctx.fill();
   }
 }
 
 function update(){
   if(running){
-    if(keys["a"]||keys["arrowleft"])me.vx=-4;
-    else if(keys["d"]||keys["arrowright"])me.vx=4;
+    if(keys.a||keys.arrowleft)me.vx=-4;
+    else if(keys.d||keys.arrowright)me.vx=4;
     else me.vx*=0.8;
 
-    if((keys["w"]||keys[" "]||keys["arrowup"])&&me.y>=ground-18){
+    if((keys.w||keys[" "]||keys.arrowup)&&me.y>=332){
       me.vy=-11;
     }
 
@@ -250,14 +255,18 @@ function update(){
     me.y+=me.vy;
     me.x=Math.max(18,Math.min(682,me.x));
 
-    if(me.y>ground-18){me.y=ground-18;me.vy=0;}
+    if(me.y>332){me.y=332;me.vy=0;}
 
-    const now=Date.now();
-    if(room && playerRef && now-lastSend>90){
-      lastSend=now;
-      playerRef.update({x:me.x,y:me.y,updatedAt:now});
+    if(room&&playerRef&&Date.now()-lastSent>100){
+      lastSent=Date.now();
+      playerRef.update({
+        x:me.x,y:me.y,updatedAt:Date.now()
+      }).catch(error=>{
+        statusEl.textContent="Update failed: "+error.message;
+      });
     }
   }
+
   draw();
   requestAnimationFrame(update);
 }
